@@ -12,6 +12,10 @@ import com.google.android.gms.common.api.ApiException
 import com.google.firebase.analytics.FirebaseAnalytics
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.iid.FirebaseInstanceId
+import com.google.firebase.installations.FirebaseInstallations
+import com.google.firebase.ktx.Firebase
+import com.google.firebase.messaging.FirebaseMessaging
 import kotlinx.android.synthetic.main.activity_auth.*
 
 class AuthActivity : AppCompatActivity() {
@@ -22,8 +26,24 @@ class AuthActivity : AppCompatActivity() {
         setContentView(R.layout.activity_auth)
 
         analyticsProcess()
+        notification()
         setup()
         session()
+    }
+
+    private fun notification() {
+        FirebaseInstallations.getInstance().getToken(true).addOnCompleteListener {
+            it.result?.token.let {
+                println("Token 1: $it")
+            }
+        }
+
+        FirebaseMessaging.getInstance().subscribeToTopic("tutorial")
+
+        val url = intent.getStringExtra("url")
+        url?.let {
+
+        }
     }
 
     private fun session() {
@@ -124,13 +144,14 @@ class AuthActivity : AppCompatActivity() {
                 if (account != null) {
                     val credential = GoogleAuthProvider.getCredential(account.idToken, null)
 
-                    FirebaseAuth.getInstance().signInWithCredential(credential).addOnCompleteListener{
-                        if (it.isSuccessful) {
-                            showHome(account.email?: "", ProviderType.GOOGLE)
-                        } else {
-                            showAlert()
+                    FirebaseAuth.getInstance().signInWithCredential(credential)
+                        .addOnCompleteListener {
+                            if (it.isSuccessful) {
+                                showHome(account.email ?: "", ProviderType.GOOGLE)
+                            } else {
+                                showAlert()
+                            }
                         }
-                    }
                 }
             } catch (e: ApiException) {
                 showAlert()
